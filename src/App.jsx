@@ -1,61 +1,149 @@
 import React, { useState } from 'react';
-import { Layout, Menu, theme } from 'antd';
-import { UserOutlined, VideoCameraOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { Layout, Menu, theme, Typography } from 'antd';
+import { 
+  HomeOutlined, 
+  UserOutlined, 
+  RocketOutlined, 
+  DollarOutlined, 
+  MenuFoldOutlined, 
+  MenuUnfoldOutlined 
+} from '@ant-design/icons';
 import InfluencerTable from './InfluencerTable';
 
-// Layout 컴포넌트에서 필요한 하위 컴포넌트 추출
+// ✅ 로고 이미지가 있다면 경로 유지, 없다면 주석 처리
+// import logoImg from './assets/logo.png'; 
+
 const { Header, Content, Footer, Sider } = Layout;
+const { Title } = Typography;
 
 const App = () => {
-  // 사이드바 접기/펴기 상태 관리
   const [collapsed, setCollapsed] = useState(false);
   
-  // Ant Design 테마 토큰 사용 (배경색, 둥근 모서리 등)
+  // ✅ 현재 선택된 메뉴 키 관리 (기본값: 홈)
+  const [selectedKey, setSelectedKey] = useState('home');
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // 메뉴 아이템 정의
-  const menuItems = [
-    { key: '1', icon: <UserOutlined />, label: '인플루언서 관리' },
-    { key: '2', icon: <VideoCameraOutlined />, label: '영상 분석' },
+  // ✅ 메뉴 구조 정의 (대분류 -> 중분류 -> 소분류)
+  const items = [
+    // 1. 홈
+    { 
+      key: 'home', 
+      icon: <HomeOutlined />, 
+      label: '홈' 
+    },
+    
+    // 2. 인플루언서 마케팅 (토글)
+    {
+      key: 'influencer_marketing',
+      icon: <UserOutlined />,
+      label: '인플루언서 마케팅',
+      children: [
+        // 2-1. 유상 시딩 (토글)
+        {
+          key: 'paid_seeding',
+          label: '유상 시딩',
+          children: [
+            // 2-1-1. 인플루언서 선별 (클릭 시 테이블 표출)
+            { key: 'paid_selection', label: '인플루언서 선별' },
+          ]
+        },
+        // 2-2. 무상 시딩 (토글)
+        {
+          key: 'unpaid_seeding',
+          label: '무상 시딩',
+          children: [
+            // 2-2-1. 인플루언서 선별 (클릭 시 테이블 표출)
+            { key: 'unpaid_selection', label: '인플루언서 선별' },
+          ]
+        }
+      ]
+    },
+
+    // 3. 퍼포먼스 마케팅
+    { 
+      key: 'performance_marketing', 
+      icon: <RocketOutlined />, 
+      label: '퍼포먼스 마케팅' 
+    },
+
+    // 4. P/L 관리
+    { 
+      key: 'pl_management', 
+      icon: <DollarOutlined />, 
+      label: 'P/L 관리' 
+    },
   ];
 
+  // ✅ 메뉴 클릭 핸들러
+  const handleMenuClick = (e) => {
+    setSelectedKey(e.key);
+  };
+
+  // ✅ 메인 콘텐츠 렌더링 함수
+  const renderContent = () => {
+    switch (selectedKey) {
+      // '유상-선별' 또는 '무상-선별' 클릭 시 우리가 만든 테이블 보여주기
+      case 'paid_selection':
+      case 'unpaid_selection':
+        return <InfluencerTable />;
+        
+      case 'home':
+        return <div style={{ textAlign: 'center', marginTop: 50 }}><Title level={3}>홈 대시보드 (준비 중)</Title></div>;
+      
+      case 'performance_marketing':
+        return <div style={{ textAlign: 'center', marginTop: 50 }}><Title level={3}>퍼포먼스 마케팅 페이지</Title></div>;
+        
+      case 'pl_management':
+        return <div style={{ textAlign: 'center', marginTop: 50 }}><Title level={3}>P/L 관리 페이지</Title></div>;
+        
+      default:
+        return <div>페이지를 찾을 수 없습니다.</div>;
+    }
+  };
+
   return (
-    // 전체 레이아웃 (최소 높이를 화면 전체로 설정)
     <Layout style={{ minHeight: '100vh' }}>
-      {/* 좌측 사이드바 */}
-      <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div className="demo-logo-vertical" style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6 }} />
+      <Sider trigger={null} collapsible collapsed={collapsed} width={250}>
+        
+        {/* 로고 영역 (플레이스홀더) */}
+        <div style={{ 
+          height: 32, 
+          margin: 16, 
+          background: 'rgba(255, 255, 255, 0.2)', 
+          borderRadius: 6 
+        }} />
+
+        {/* ✅ 메뉴 영역 */}
         <Menu
           theme="dark"
           mode="inline"
-          defaultSelectedKeys={['1']}
-          items={menuItems}
+          defaultSelectedKeys={['home']}
+          defaultOpenKeys={['influencer_marketing', 'paid_seeding']} // 처음부터 펼쳐놓을 메뉴 키
+          items={items}
+          onClick={handleMenuClick} // 클릭 시 selectedKey 변경
         />
       </Sider>
-      
-      {/* 우측 메인 영역 */}
+
       <Layout>
-        {/* 상단 헤더 */}
         <Header style={{ padding: 0, background: colorBgContainer, display: 'flex', alignItems: 'center' }}>
-            {/* 사이드바 토글 버튼 */}
-            {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                className: 'trigger',
-                onClick: () => setCollapsed(!collapsed),
-                style: { fontSize: '18px', padding: '0 24px', cursor: 'pointer', transition: 'color 0.3s' }
-            })}
+            <div 
+                onClick={() => setCollapsed(!collapsed)}
+                style={{ fontSize: '18px', padding: '0 24px', cursor: 'pointer' }}
+            >
+                {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            </div>
         </Header>
         
-        {/* 메인 콘텐츠 영역 */}
         <Content style={{ margin: '24px 16px', padding: 24, minHeight: 280, background: colorBgContainer, borderRadius: borderRadiusLG }}>
-          {/* 여기에 우리가 만든 테이블 컴포넌트가 들어갑니다 */}
-          <InfluencerTable />
+          {/* ✅ 선택된 메뉴에 따라 화면이 바뀝니다 */}
+          {renderContent()}
         </Content>
         
-        {/* 하단 푸터 */}
         <Footer style={{ textAlign: 'center' }}>
-          Influencer Admin ©{new Date().getFullYear()} Created by Athome
+          AtHome Admin ©{new Date().getFullYear()}
         </Footer>
       </Layout>
     </Layout>
