@@ -6,9 +6,12 @@ import {
   RocketOutlined, 
   DollarOutlined, 
   MenuFoldOutlined, 
-  MenuUnfoldOutlined 
+  MenuUnfoldOutlined,
+  YoutubeOutlined
 } from '@ant-design/icons';
 import InfluencerTable from './InfluencerTable';
+import YoutubeAccount from './YoutubeAccount';
+import YoutubeDashboard from './YoutubeDashboard';
 
 // ✅ 로고 이미지가 있다면 경로 유지, 없다면 주석 처리
 // import logoImg from './assets/logo.png'; 
@@ -61,6 +64,34 @@ const App = () => {
         }
       ]
     },
+    {
+      key: 'youtube comment viral',
+      icon: <UserOutlined />,
+      label: '유튜브 댓글 바이럴',
+      children: [
+        // 2-1. 계정 (토글)
+        {
+          key: 'youtube_account',
+          label: '유튜브 계정',
+        },
+        // 2-2. 생성된 댓글 (토글)
+        {
+          key: 'yt_comment_list',
+          label: '생성된 댓글',
+        },
+        // 2-3. 프롬프트
+        {
+          key: 'youtube_comment_prompt',
+          label: '프롬프트',
+        },
+        // 2-4. 댓글 업로드 대시보드
+        {
+          key: 'youtube_dashboard',
+          label: '댓글 업로드 대시보드',
+        }
+      ]
+    },
+
 
     // 3. 퍼포먼스 마케팅
     { 
@@ -98,7 +129,19 @@ const App = () => {
         
       case 'pl_management':
         return <div style={{ textAlign: 'center', marginTop: 50 }}><Title level={3}>P/L 관리 페이지</Title></div>;
-        
+      
+      case 'youtube_account':
+        return <YoutubeAccount />;
+
+      case 'yt_comment_list':
+        return <div style={{ textAlign: 'center', marginTop: 50 }}><Title level={3}>생성된 댓글 목록 (준비 중)</Title></div>;
+
+      case 'youtube_dashboard':
+        return <YoutubeDashboard />;
+
+      case 'youtube_comment_prompt':
+        return <div style={{ textAlign: 'center', marginTop: 50 }}><Title level={3}>댓글 생성 프롬프트 대시보드 (준비 중)</Title></div>;
+      
       default:
         return <div>페이지를 찾을 수 없습니다.</div>;
     }
