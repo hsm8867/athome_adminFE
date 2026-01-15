@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Menu, theme, Typography } from 'antd';
 import { 
   HomeOutlined, 
@@ -45,22 +45,25 @@ const sharedData = [
 
 const App = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedKey, setSelectedKey] = useState('home');
+  const [selectedKey, setSelectedKey] = useState(localStorage.getItem('lastSelectedKey') || 'home');
   
-  // ✅ [추가] 댓글 페이지에서 보여줄 선택된 비디오 Key 관리
+  // 댓글 페이지에서 보여줄 선택된 비디오 Key 관리
   const [selectedVideoKey, setSelectedVideoKey] = useState(null);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // ✅ [추가] 대시보드에서 '댓글 보러가기' 클릭 시 실행되는 함수
+  useEffect(() => {
+    localStorage.setItem('lastSelectedKey', selectedKey);
+  }, [selectedKey]);
+
+  // 대시보드에서 '댓글 보러가기' 클릭 시 실행되는 함수
   const handleGoToComments = (record) => {
     setSelectedVideoKey(record.key); // 해당 비디오를 선택 상태로 설정
     setSelectedKey('yt_comment_list'); // 메뉴를 '생성된 댓글' 페이지로 강제 전환
   };
 
-  // ✅ [수정] 메뉴 클릭 핸들러 (사용자가 직접 메뉴를 누를 때)
   const handleMenuClick = (e) => {
     setSelectedKey(e.key);
     // 메뉴를 직접 누르면 비디오 선택을 초기화하거나 유지할지 결정 (여기선 유지)
@@ -101,7 +104,7 @@ const App = () => {
         return <YoutubeAccount />;
 
       case 'yt_comment_list':
-        // ✅ [수정] CreatedComments에 데이터와 선택된 키, 변경 함수 전달
+        // CreatedComments에 데이터와 선택된 키, 변경 함수 전달
         return (
           <CreatedComments 
             data={sharedData} 
