@@ -22,16 +22,29 @@ const YoutubeDashboard = ({ data, onGoToComments }) => {
 
   // ✅ [핵심] 댓글 생성 요청 함수 (n8n 호출)
   const handleGenerate = async (record) => {
-    setLoadingId(record.key); // 로딩 시작
+    setLoadingId(record.key); // 로딩 아이콘 돌리기 시작
+    
     try {
-      // 백엔드 호출: POST /videos/{id}/generate
-      await axios.post(`${API_BASE_URL}/videos/${record.key}/generate`);
-      message.success(`'${record.title}' 댓글 생성을 요청했습니다!`);
+      // 📡 요청하신 URL: /youtube/{video_id}/generate 호출
+      // record.key가 video_id 입니다.
+      const url = `${API_BASE_URL}/youtube/${record.key}/generate`;
       
-      // (선택) 여기서 데이터를 다시 불러오는 로직이 있으면 좋음 (status 변경 반영 위해)
+      console.log(`📡 댓글 생성 요청 시작: ${url}`);
+      
+      // POST 요청 전송
+      await axios.post(url);
+      
+      message.success(`'${record.title}' 댓글 생성을 요청했습니다! (n8n 실행됨)`);
+      
     } catch (error) {
-      console.error(error);
-      message.error('댓글 생성 요청 실패');
+      console.error("댓글 생성 요청 실패:", error);
+      
+      // 에러 메시지 처리
+      if (error.response && error.response.status === 404) {
+        message.error("API 주소를 찾을 수 없습니다. (백엔드 router prefix 확인 필요)");
+      } else {
+        message.error('댓글 생성 요청 실패');
+      }
     } finally {
       setLoadingId(null); // 로딩 끝
     }
@@ -62,6 +75,13 @@ const YoutubeDashboard = ({ data, onGoToComments }) => {
         else if (status === '대기 중') color = 'warning';
         return <Tag color={color}>{status}</Tag>;
       },
+    },
+    {
+      title: 'YouTube URL',
+      dataIndex: 'url',
+      key: 'url',
+      width: '30%',
+      render: (text) => <a href={text} target="_blank" rel="noopener noreferrer">{text}</a>,
     },
     {
       title: '썸네일',
