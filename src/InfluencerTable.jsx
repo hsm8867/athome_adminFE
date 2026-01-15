@@ -49,7 +49,7 @@ const InfluencerTable = () => {
 
       // 본인의 GCP 외부 IP로 수정해주세요!
       //const response = await axios.get(`http://localhost:9000/youtube/search`, {
-      const response = await axios.get('http://34.158.194.219:8000/youtube/search',{
+      const response = await axios.get('http://34.64.158.35:8000/youtube/search',{
         params: { 
           hashtags: hashtagsStr,
           country: country,
