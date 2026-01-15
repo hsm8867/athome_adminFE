@@ -1,4 +1,3 @@
-// ✅ [수정됨] 여기에 useState, useEffect가 반드시 포함되어야 합니다!
 import React, { useMemo, useState, useEffect } from 'react'; 
 import { Menu, Avatar, Typography, Empty, Card, message, Spin } from 'antd';
 import { UserOutlined, YoutubeOutlined } from '@ant-design/icons';
@@ -6,7 +5,7 @@ import axios from 'axios';
 
 const { Title, Text } = Typography;
 
-// ✅ API 주소 정의
+// API 주소 정의
 const API_BASE_URL = 'http://34.64.158.35:8000';
 
 // 헬퍼 함수
@@ -41,11 +40,18 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
 
         const fetchComments = async () => {
             setLoading(true);
+            console.log(`📡 [API 요청 시작] Video ID: ${activeVideo.key}, Title: ${activeVideo.title}`);
+            console.log(`🔗 요청 URL: ${API_BASE_URL}/videos/${activeVideo.key}/comments`);
             try {
                 const res = await axios.get(`${API_BASE_URL}/youtube/${activeVideo.key}/comments`);
+                console.log(`✅ [API 응답 성공] Video ID: ${activeVideo.key}`);
+                console.log("📦 받아온 댓글 데이터:", res.data);
+
                 setComments(res.data); 
             } catch (err) {
-                console.error("댓글 로딩 실패:", err);
+                console.error(`❌ [API 에러] Video ID: ${activeVideo.key}`);
+                console.error("Error Details:", err)
+                
                 message.error("댓글을 불러오지 못했습니다.");
                 setComments([]);
             } finally {
