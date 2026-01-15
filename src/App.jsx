@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Menu, theme, Typography } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Layout, Menu, theme, Typography, message } from 'antd';
+import axios from 'axios';
 import { 
   HomeOutlined, 
   UserOutlined, 
@@ -18,31 +19,6 @@ import CreatedComments from './CreatedComments';
 const { Header, Content, Footer, Sider } = Layout;
 const { Title } = Typography;
 
-// ✅ 데이터 (App.js로 이동하여 공유)
-const sharedData = [
-  {
-    key: '1',
-    title: '테스트 영상 1',
-    url: 'https://youtu.be/zjy-1NkH7zI',
-    status: '댓글 생성 요청',
-    comments: ['댓글1', '댓글2'], // 댓글 데이터 예시 추가
-  },
-  {
-    key: '2',
-    title: '신제품 리뷰 영상',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    status: '업로드 완료',
-    comments: ['좋아요', '굿'],
-  },
-  {
-    key: '3',
-    title: '브이로그 3편',
-    url: 'https://youtu.be/abcdefghijk',
-    status: '대기 중',
-    comments: [],
-  },
-];
-
 const App = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKey, setSelectedKey] = useState(localStorage.getItem('lastSelectedKey') || 'home');
@@ -50,9 +26,40 @@ const App = () => {
   // 댓글 페이지에서 보여줄 선택된 비디오 Key 관리
   const [selectedVideoKey, setSelectedVideoKey] = useState(null);
 
+  const API_BASE_URL = 'http://34.64.158.35:8000';
+
+  // videos 상태 관리 (초기값 빈 배열)
+  const [videos, setVideos] = useState([]);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  // 영상 불러오기 함수
+  const fetchVideos = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/youtube/videos`);
+      console.log("백엔드 원본 데이터:", response.data); // ✅ 이 로그 확인!
+
+      // DB 데이터 형식을 프론트엔드 형식으로 변환
+      // DB: id, generated_comments  <-> Front: key, comments
+      const formattedData = response.data.map(v => ({
+        key: v.id,                 // Antd 테이블용 key
+        title: v.title,
+        url: v.url,
+        status: v.status,
+        ...v
+      }));
+      console.log("변환된 데이터:", formattedData);
+      setVideos(formattedData);
+    } catch (error) {
+      console.error("영상 목록 로딩 실패:", error);
+      message.error("영상 데이터를 불러오지 못했습니다.");
+    }
+  };
+
+  useEffect(() => {
+    fetchVideos();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('lastSelectedKey', selectedKey);
@@ -97,6 +104,7 @@ const App = () => {
         return <div style={{ textAlign: 'center', marginTop: 50 }}><Title level={3}>홈 대시보드</Title></div>;
       
       case 'paid_selection':
+        return <InfluencerTable />;
       case 'unpaid_selection':
         return <InfluencerTable />;
         
@@ -107,17 +115,17 @@ const App = () => {
         // CreatedComments에 데이터와 선택된 키, 변경 함수 전달
         return (
           <CreatedComments 
-            data={sharedData} 
+            data={videos} 
             selectedVideoKey={selectedVideoKey} 
             onSelectVideo={setSelectedVideoKey} 
           />
         );
 
       case 'youtube_dashboard':
-        // ✅ [수정] YoutubeDashboard에 데이터와 이동 함수 전달
+        // [수정] YoutubeDashboard에 데이터와 이동 함수 전달
         return (
           <YoutubeDashboard 
-            data={sharedData} 
+            data={videos} 
             onGoToComments={handleGoToComments} 
           />
         );
