@@ -43,7 +43,7 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
             console.log(`📡 [API 요청 시작] Video ID: ${activeVideo.key}, Title: ${activeVideo.title}`);
             console.log(`🔗 요청 URL: ${API_BASE_URL}/videos/${activeVideo.key}/comments`);
             try {
-                const res = await axios.get(`${API_BASE_URL}/youtube/${activeVideo.key}/comments`);
+                const res = await axios.get(`${API_BASE_URL}/youtube/videos/${activeVideo.key}/comments`);
                 console.log(`✅ [API 응답 성공] Video ID: ${activeVideo.key}`);
                 console.log("📦 받아온 댓글 데이터:", res.data);
 
