@@ -36,33 +36,27 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
 
     // 2. activeVideo가 바뀔 때마다 백엔드에서 댓글 가져오기
     useEffect(() => {
-        if (!activeVideo) return;
+    if (!activeVideo) return;
 
-        const fetchComments = async () => {
-            setLoading(true);
-            console.log(`📡 [API 요청 시작] Video ID: ${activeVideo.key}, Title: ${activeVideo.title}`);
-            console.log(`🔗 요청 URL: ${API_BASE_URL}/youtube/videos/${activeVideo.key}/comments`);
+    const fetchUploadedComments = async () => {
+        setLoading(true);
+        try {
+            // ✅ 쿼리 파라미터 추가 (?only_used=true)
+            const res = await axios.get(`${API_BASE_URL}/youtube/videos/${activeVideo.key}/comments`, {
+                params: { only_used: true } 
+            });
             
-            try {
-                // ✅ 백엔드 라우터 경로에 맞춰 /youtube 추가 확인 필요
-                const res = await axios.get(`${API_BASE_URL}/youtube/videos/${activeVideo.key}/comments`);
-                console.log(`✅ [API 응답 성공] Video ID: ${activeVideo.key}`);
-                console.log("📦 받아온 댓글 데이터:", res.data);
+            setComments(res.data); 
+        } catch (err) {
+            console.error(err);
+            setComments([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-                setComments(res.data); 
-            } catch (err) {
-                console.error(`❌ [API 에러] Video ID: ${activeVideo.key}`);
-                console.error("Error Details:", err)
-                
-                message.error("댓글을 불러오지 못했습니다.");
-                setComments([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchComments();
-    }, [activeVideo]);
+    fetchUploadedComments();
+}, [activeVideo]);
 
     const menuItems = data.map((item) => ({
         key: String(item.key),
