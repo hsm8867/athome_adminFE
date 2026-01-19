@@ -8,7 +8,7 @@ import YoutubeDashboard from '../components/YoutubeViral/YoutubeDashboard';
 import CreatedComments from '../components/YoutubeViral/CreatedComments';
 import YoutubePrompt from '../components/YoutubeViral/YoutubePrompt';
 
-const API_BASE_URL = 'http://34.64.158.35:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const YoutubeViral = () => {
   const [activeTab, setActiveTab] = useState('dashboard');

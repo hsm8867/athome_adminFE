@@ -6,7 +6,7 @@ import axios from 'axios';
 const { Title, Text } = Typography;
 
 // API 주소 정의
-const API_BASE_URL = 'http://34.64.158.35:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // 헬퍼 함수 (DB에 썸네일이 없을 경우를 대비한 백업용)
 const getYoutubeThumbnail = (url) => {

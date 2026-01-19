@@ -16,7 +16,7 @@ const YoutubePrompt = () => {
   const [form] = Form.useForm();
 
   // ✅ 라우터 주소에 맞춰 API 호출 경로 수정됨
-  const API_BASE_URL = 'http://34.64.158.35:8000';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // 1. 목록 조회 (GET /youtube/persona)
   const fetchPersonas = async () => {

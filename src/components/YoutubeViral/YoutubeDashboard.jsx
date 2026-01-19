@@ -9,7 +9,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const YoutubeDashboard = ({ data = [] }) => { 
-  const API_BASE_URL = 'http://localhost:8000'; 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // --- 상태 관리 ---
   const [urlInput, setUrlInput] = useState(() => sessionStorage.getItem('y_url_input') || '');

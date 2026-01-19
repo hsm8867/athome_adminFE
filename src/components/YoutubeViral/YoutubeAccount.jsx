@@ -11,7 +11,7 @@ const YoutubeAccount = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm(); // 이메일 입력 폼
 
-  const API_BASE_URL = 'http://34.64.158.35:8000'; 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
   // 1. 계정 목록 불러오기
   const fetchAccounts = async () => {
