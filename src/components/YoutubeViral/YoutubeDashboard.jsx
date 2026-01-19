@@ -246,7 +246,7 @@ const YoutubeDashboard = ({ data = [] }) => {
       });
 
       const targetVideoId = selectedItems[0].video_id;
-      
+
       if (!targetVideoId) {
         message.error("영상 ID를 찾을 수 없습니다.");
         return;
@@ -345,13 +345,26 @@ const YoutubeDashboard = ({ data = [] }) => {
         title: '상태',
         dataIndex: 'status',
         key: 'status',
-        width: 120, // ✅ 너비 명시
+        width: 120,
         align: 'center',
-        render: (status) => (
-            <span style={{ color: status === '업로드 완료' ? '#d63384' : (status === '댓글 업로드 대기중' ? '#1890ff' : '#888'), fontSize: '12px' }}>
-                {status}
-            </span>
-        )
+        render: (status) => {
+            let color = '#888'; // 기본 색상 (대기 중 등)
+            let fontWeight = 'normal';
+
+            if (status === '업로드 완료') {
+                color = '#1890ff'; // ✅ 파란색 (성공)
+                fontWeight = 'bold';
+            } else if (['업로드 실패', '에러 발생', '토큰 만료'].includes(status)) {
+                color = '#ff4d4f'; // ✅ 빨간색 (실패 계열)
+                fontWeight = 'bold';
+            } 
+
+            return (
+                <span style={{ color: color, fontWeight: fontWeight, fontSize: '12px' }}>
+                    {status}
+                </span>
+            );
+        }
     },
     {
         title: '반영 시점',
