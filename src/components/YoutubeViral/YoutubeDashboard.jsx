@@ -9,7 +9,8 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const YoutubeDashboard = ({ data = [] }) => { 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  // API 주소 설정
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://34.64.158.35:8000';
 
   // --- 상태 관리 ---
   const [urlInput, setUrlInput] = useState(() => sessionStorage.getItem('y_url_input') || '');
@@ -23,9 +24,9 @@ const YoutubeDashboard = ({ data = [] }) => {
   const [comments, setComments] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
-  // ✅ 수정 모드 관리를 위한 State
+  // 수정 모드 상태
   const [editingKey, setEditingKey] = useState(''); 
-  const [editingContent, setEditingContent] = useState(''); // 수정 중인 내용 임시 저장
+  const [editingContent, setEditingContent] = useState(''); 
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [personas, setPersonas] = useState([]); 
@@ -33,6 +34,7 @@ const YoutubeDashboard = ({ data = [] }) => {
 
   const pollingRef = useRef(null);
 
+  // --- Effects ---
   useEffect(() => {
     sessionStorage.setItem('y_url_input', urlInput);
   }, [urlInput]);
@@ -50,7 +52,6 @@ const YoutubeDashboard = ({ data = [] }) => {
   }, [currentVideoId]);
 
   // --- API 호출 함수들 ---
-
   const fetchPersonas = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/youtube/persona`);
@@ -63,24 +64,20 @@ const YoutubeDashboard = ({ data = [] }) => {
   const fetchComments = async (videoId = null, isSilent = false) => {
     if (!isSilent) setListLoading(true);
     try {
-      // ✅ 수정된 쿼리 결과(scheduled_time 포함)를 받아옴
       const response = await axios.get(`${API_BASE_URL}/youtube/videos/comments`);
       const rawData = response.data;
       
       const formattedData = rawData.map((item, index) => ({
-        key: item.id || index, // key는 id 사용
+        key: item.id || index,
         ...item,
         status: item.status || '대기 중',
-        // scheduled_time은 백엔드에서 옴
       }));
 
-      // 변경사항 감지 (단순 길이 비교)
       if (formattedData.length !== comments.length) {
            setComments(formattedData);
            if (!isSilent) message.success('목록이 업데이트되었습니다.');
            return true; 
       }
-      
       setComments(formattedData); 
       return false; 
     } catch (error) {
@@ -93,7 +90,6 @@ const YoutubeDashboard = ({ data = [] }) => {
   };
 
   // --- 핸들러 ---
-
   const handleOpenModal = () => {
     if (!urlInput) {
       message.warning('YouTube URL을 입력해주세요.');
@@ -110,7 +106,7 @@ const YoutubeDashboard = ({ data = [] }) => {
       setIsModalVisible(false); 
       setIsGenerating(true); 
 
-      const response = await axios.post(`${API_BASE_URL}/youtube/videos_test`, {
+      const response = await axios.post(`${API_BASE_URL}/youtube/videos`, {
         url: urlInput,
         title: values.title,        
         persona_id: values.persona,
@@ -120,7 +116,7 @@ const YoutubeDashboard = ({ data = [] }) => {
       const videoId = response.data.video_id;
       setCurrentVideoId(videoId);
       setIsGenerating(false);
-      message.success('댓글 생성이 시작되었습니다.', 3);
+      message.success('댓글 생성이 시작되었습니다. (약 1~2분 소요)', 3);
       startPolling(); 
 
     } catch (error) {
@@ -134,14 +130,14 @@ const YoutubeDashboard = ({ data = [] }) => {
   const startPolling = () => {
     stopPolling();
     let attempts = 0;
-    const maxAttempts = 24; 
+    const maxAttempts = 30; 
     
     pollingRef.current = setInterval(async () => {
       attempts++;
       const hasUpdates = await fetchComments(null, true); 
       if (hasUpdates) {
         stopPolling();
-        message.success('생성 완료!', 3);
+        message.success('댓글 생성이 완료되었습니다!', 4);
       } else if (attempts >= maxAttempts) {
         stopPolling();
       }
@@ -155,60 +151,22 @@ const YoutubeDashboard = ({ data = [] }) => {
     }
   };
 
-  // ✅ [수정] 댓글 삭제 핸들러
   const handleDelete = async (id) => {
     try {
       await axios.delete(`${API_BASE_URL}/youtube/comments/${id}`);
       message.success('삭제되었습니다.');
-      // 로컬 상태에서 바로 제거 (API 재호출 없이 반응성 향상)
       setComments(prev => prev.filter(item => item.id !== id));
-      // 또는 fetchComments();
     } catch (error) {
       console.error(error);
       message.error('삭제 실패');
     }
   };
 
-  // ✅ [수정] 댓글 등록(업로드 예약) 핸들러
-  const handleRegisterComments = async () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning('등록할 댓글을 선택해주세요.');
-      return;
-    }
-    setUploadLoading(true);
-    try {
-      const selectedItems = comments.filter(item => selectedRowKeys.includes(item.key));
-      const targetVideoId = selectedItems[0].video_id; 
-
-      const payload = selectedItems.map(item => ({
-          comment_id: item.id,
-          content: item.content,
-          scheduled_time: dayjs().format('YYYY/MM/DD HH:mm:ss') // 현재 시간 예시
-      }));
-
-      await axios.post(`${API_BASE_URL}/youtube/${targetVideoId}/upload_comment`, {
-          comments: payload
-      });
-
-      message.success('댓글 등록 요청 완료');
-      setSelectedRowKeys([]);
-      fetchComments(null, true); 
-
-    } catch (error) {
-      console.error(error);
-      message.error('등록 실패');
-    } finally {
-      setUploadLoading(false);
-    }
-  };
-
-  // --- 테이블 수정(Edit) 관련 로직 ---
-
   const isEditing = (record) => record.key === editingKey;
 
   const edit = (record) => {
     setEditingKey(record.key);
-    setEditingContent(record.content); // 현재 내용을 임시 저장
+    setEditingContent(record.content); 
   };
 
   const cancel = () => {
@@ -218,12 +176,10 @@ const YoutubeDashboard = ({ data = [] }) => {
 
   const save = async (key) => {
     try {
-      // 1. 백엔드 업데이트 요청
       await axios.put(`${API_BASE_URL}/youtube/comments/${key}`, {
         content: editingContent
       });
 
-      // 2. 로컬 상태 업데이트
       const newData = [...comments];
       const index = newData.findIndex((item) => key === item.key);
       if (index > -1) {
@@ -239,29 +195,99 @@ const YoutubeDashboard = ({ data = [] }) => {
     }
   };
 
+  const handleRegisterComments = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('등록할 댓글을 선택해주세요.');
+      return;
+    }
+
+    setUploadLoading(true);
+
+    try {
+      const now = dayjs();
+      let updatedComments = [...comments];
+      const selectedItems = comments.filter(item => selectedRowKeys.includes(item.key));
+      const totalSelected = selectedItems.length;
+      
+      const getRandomMinute = (max) => Math.floor(Math.random() * max);
+
+      selectedItems.forEach((item, index) => {
+        let scheduleTime;
+        if (totalSelected <= 3) {
+          scheduleTime = now.add(getRandomMinute(30), 'minute');
+        } else {
+          if (index < 3) {
+            scheduleTime = now.add(getRandomMinute(30), 'minute');
+          } else {
+            const delay = 30 + (index - 3) * 30;
+            scheduleTime = now.add(delay, 'minute');
+          }
+        }
+
+        const targetIndex = updatedComments.findIndex(c => c.key === item.key);
+        if (targetIndex > -1) {
+            updatedComments[targetIndex] = {
+                ...updatedComments[targetIndex],
+                status: '댓글 업로드 대기중',
+                scheduled_time: scheduleTime.format('YYYY-MM-DD HH:mm:ss')
+            };
+        }
+      });
+
+      setComments(updatedComments);
+
+      const payload = selectedItems.map(item => {
+          const updatedItem = updatedComments.find(c => c.key === item.key);
+          return {
+              comment_id: item.id,
+              scheduled_time: updatedItem.scheduled_time
+          };
+      });
+
+      await axios.post(`${API_BASE_URL}/youtube/upload_comment`, {
+          comments: payload
+      });
+
+      message.success('댓글 등록 예약이 완료되었습니다.');
+      setSelectedRowKeys([]);
+      
+    } catch (error) {
+      console.error(error);
+      message.error('등록 실패');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
   // --- 테이블 컬럼 정의 ---
   const columns = [
     {
       title: '영상제목',
       dataIndex: 'video_id', 
       key: 'video_title',
-      width: '15%',
+      width: 160, // ✅ 너비 명시
+      fixed: 'left',
       render: (videoId) => {
         const targetVideo = data.find(v => v.id === videoId);
-        return <Text strong>{targetVideo ? targetVideo.title : '-'}</Text>;
+        return (
+          <div style={{ width: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Text strong>{targetVideo ? targetVideo.title : '-'}</Text>
+          </div>
+        );
       }
     },
     {
       title: 'URL',
       dataIndex: 'video_id',
       key: 'video_url',
-      width: '10%',
+      width: 80, // ✅ 너비 명시
+      align: 'center',
       render: (videoId) => {
         const targetVideo = data.find(v => v.id === videoId);
         if (!targetVideo) return '-';
         return (
           <a href={targetVideo.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px' }}>
-            링크
+            이동
           </a>
         );
       }
@@ -270,7 +296,7 @@ const YoutubeDashboard = ({ data = [] }) => {
       title: '썸네일',
       dataIndex: 'thumbnail_url',
       key: 'thumbnail_url',
-      width: '10%',
+      width: 120, // ✅ 너비 명시
       align: 'center',
       render: (url) => (
         url ? (
@@ -278,8 +304,8 @@ const YoutubeDashboard = ({ data = [] }) => {
             src={url} 
             alt="thumbnail" 
             style={{ 
-              width: '80px', 
-              height: '45px', 
+              width: '90px', 
+              height: '50px', 
               objectFit: 'cover', 
               borderRadius: '4px',
               border: '1px solid #f0f0f0'
@@ -292,7 +318,7 @@ const YoutubeDashboard = ({ data = [] }) => {
       title: '생성된 댓글',
       dataIndex: 'content',
       key: 'content',
-      width: '35%',
+      width: 450, // ✅ 너비 명시 (가장 넓게)
       render: (text, record) => {
         const editable = isEditing(record);
         return editable ? (
@@ -303,7 +329,7 @@ const YoutubeDashboard = ({ data = [] }) => {
             style={{ color: '#d63384' }}
           />
         ) : (
-          <div style={{ whiteSpace: 'pre-wrap', color: '#d63384' }}>{text}</div>
+          <div style={{ whiteSpace: 'pre-wrap', color: '#d63384', wordBreak: 'keep-all', minWidth: '200px' }}>{text}</div>
         );
       },
     },
@@ -311,33 +337,32 @@ const YoutubeDashboard = ({ data = [] }) => {
         title: '상태',
         dataIndex: 'status',
         key: 'status',
-        width: '10%',
+        width: 120, // ✅ 너비 명시
         align: 'center',
         render: (status) => (
-            <span style={{ color: status === '등록 완료' ? '#d63384' : '#888', fontSize: '12px' }}>
+            <span style={{ color: status === '업로드 완료' ? '#d63384' : (status === '댓글 업로드 대기중' ? '#1890ff' : '#888'), fontSize: '12px' }}>
                 {status}
             </span>
         )
     },
-    // ✅ [추가] 업로드 시점 컬럼
     {
-        title: '업로드 시점',
+        title: '반영 시점',
         dataIndex: 'scheduled_time',
         key: 'scheduled_time',
-        width: '15%',
+        width: 140, // ✅ 너비 명시
         align: 'center',
         render: (time) => (
             <span style={{ color: time ? '#1890ff' : '#ccc', fontSize: '12px' }}>
-                {time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-'}
+                {time ? dayjs(time).format('MM-DD HH:mm') : '-'}
             </span>
         )
     },
-    // ✅ [수정] 작업 컬럼 (수정/저장/취소/삭제)
     {
       title: '작업',
       key: 'action',
       align: 'center',
-      width: '15%',
+      width: 140, // ✅ 너비 명시
+      fixed: 'right', // 우측 고정
       render: (_, record) => {
         const editable = isEditing(record);
         return editable ? (
@@ -429,6 +454,9 @@ const YoutubeDashboard = ({ data = [] }) => {
             pagination={{ pageSize: 10 }} 
             loading={listLoading}
             locale={{ emptyText: '생성된 댓글이 없습니다.' }}
+            // ✅ 핵심 변경: 1200px 대신 'max-content' 사용 
+            // -> 화면이 좁으면 스크롤 생성, 넓으면 꽉 채움
+            scroll={{ x: 'max-content' }} 
           />
           
           <div style={{ marginTop: 16, textAlign: 'right' }}>
@@ -447,6 +475,7 @@ const YoutubeDashboard = ({ data = [] }) => {
         </Card>
       </Spin>
 
+      {/* 모달 등 나머지 유지 */}
       <Modal
         title="영상 정보 및 페르소나 설정"
         open={isModalVisible}
