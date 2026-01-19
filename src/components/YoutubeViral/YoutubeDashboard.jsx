@@ -240,11 +240,19 @@ const YoutubeDashboard = ({ data = [] }) => {
           const updatedItem = updatedComments.find(c => c.key === item.key);
           return {
               comment_id: item.id,
+              content: item.content,
               scheduled_time: updatedItem.scheduled_time
           };
       });
 
-      await axios.post(`${API_BASE_URL}/youtube/upload_comment`, {
+      const targetVideoId = selectedItems[0].video_id;
+      
+      if (!targetVideoId) {
+        message.error("영상 ID를 찾을 수 없습니다.");
+        return;
+      }
+
+      await axios.post(`${API_BASE_URL}/youtube/${targetVideoId}/upload_comment`, {
           comments: payload
       });
 
