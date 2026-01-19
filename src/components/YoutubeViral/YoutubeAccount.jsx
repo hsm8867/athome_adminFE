@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Tag, Button, Space, message, Card, Modal, Input, Form } from 'antd';
-import { PlusOutlined, ReloadOutlined, GoogleOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Space, message, Card, Modal, Input, Form, Popconfirm } from 'antd'; // ✅ Popconfirm 추가
+import { PlusOutlined, ReloadOutlined, GoogleOutlined, DeleteOutlined } from '@ant-design/icons'; // ✅ DeleteOutlined 추가
 import axios from 'axios';
 
 const YoutubeAccount = () => {
@@ -9,9 +9,9 @@ const YoutubeAccount = () => {
   
   // 모달 관련 상태
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [form] = Form.useForm(); // 이메일 입력 폼
+  const [form] = Form.useForm(); 
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // 1. 계정 목록 불러오기
   const fetchAccounts = async () => {
@@ -25,7 +25,6 @@ const YoutubeAccount = () => {
       setData(formattedData);
     } catch (error) {
       console.error('계정 로딩 실패:', error);
-      // message.error('계정 목록을 불러오지 못했습니다.'); // 너무 자주 뜨면 주석 처리
     } finally {
       setLoading(false);
     }
@@ -35,18 +34,30 @@ const YoutubeAccount = () => {
     fetchAccounts();
   }, []);
 
+  // ✅ [추가됨] 계정 삭제 핸들러
+  const handleDelete = async (id) => {
+    try {
+        await axios.delete(`${API_BASE_URL}/youtube/accounts/${id}`);
+        message.success('계정이 삭제되었습니다.');
+        // 목록 갱신 (로컬 상태에서 제거하여 불필요한 API 호출 방지)
+        setData((prevData) => prevData.filter((item) => item.id !== id));
+    } catch (error) {
+        console.error('삭제 실패:', error);
+        message.error('계정 삭제에 실패했습니다.');
+    }
+  };
+
   // 2. "계정 등록" 버튼 클릭 시 모달 열기
   const showRegisterModal = () => {
     form.resetFields();
     setIsModalVisible(true);
   };
 
-  // 3. 모달에서 이메일 입력 후 "확인" 눌렀을 때 -> 구글 로그인 진행
+  // 3. 모달 인증 처리
   const handleRegisterStart = (values) => {
     const email = values.email;
-    setIsModalVisible(false); // 모달 닫기
+    setIsModalVisible(false); 
 
-    // 팝업 설정
     const width = 500;
     const height = 600;
     const left = window.screen.width / 2 - width / 2;
@@ -61,12 +72,11 @@ const YoutubeAccount = () => {
       `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
     );
 
-    // 팝업 감지
     const timer = setInterval(() => {
       if (popup.closed) {
         clearInterval(timer);
         message.info('인증이 종료되었습니다. 목록을 갱신합니다.');
-        fetchAccounts(); // 목록 갱신 (성공했으면 리스트에 뜸)
+        fetchAccounts(); 
       }
     }, 1000);
   };
@@ -84,7 +94,6 @@ const YoutubeAccount = () => {
       key: 'onboarding_status',
       align: 'center',
       render: (status) => {
-        // 백엔드에서: 1=성공, -1=실패, 0=대기
         if (status === 1) {
             return <Tag color="green">연동 완료 (Active)</Tag>;
         } else if (status === -1) {
@@ -105,59 +114,74 @@ const YoutubeAccount = () => {
       key: 'action',
       align: 'center',
       render: (_, record) => {
-        // 등록 실패(-1)했거나 대기중이면 다시 시도할 수 있게 버튼 표시
-        if (record.onboarding_status !== 1) {
-            return (
-                 <Button 
-                    size="small"
-                    icon={<ReloadOutlined />} 
-                    onClick={() => {
-                        form.setFieldsValue({ email: record.email }); // 이메일 채워주기
-                        handleRegisterStart({ email: record.email }); // 바로 로그인 프로세스 시작
-                    }}
-                 >
-                    재시도
-                 </Button>
-            );
-        }
-        return <span style={{ color: '#aaa', fontSize: '12px' }}>정상 작동 중</span>;
+        return (
+            <Space>
+                {/* 재시도 버튼 (실패/대기 상태일 때만) */}
+                {record.onboarding_status !== 1 && (
+                    <Button 
+                        size="small"
+                        icon={<ReloadOutlined />} 
+                        onClick={() => {
+                            form.setFieldsValue({ email: record.email });
+                            handleRegisterStart({ email: record.email });
+                        }}
+                    >
+                        재시도
+                    </Button>
+                )}
+
+                {/* ✅ [추가됨] 삭제 버튼 */}
+                <Popconfirm 
+                    title="계정 삭제"
+                    description="정말 이 계정을 삭제하시겠습니까?"
+                    onConfirm={() => handleDelete(record.id)}
+                    okText="삭제"
+                    cancelText="취소"
+                    okButtonProps={{ danger: true }}
+                >
+                    <Button 
+                        size="small" 
+                        danger 
+                        icon={<DeleteOutlined />}
+                    >
+                        삭제
+                    </Button>
+                </Popconfirm>
+            </Space>
+        );
       },
     },
   ];
 
   return (
     <div style={{ marginTop: 20 }}>
-      {/* 상단 헤더 영역 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h3>유튜브 계정 관리</h3>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={fetchAccounts}>
             새로고침
           </Button>
-          {/* ✅ 계정 등록 버튼 (피그마 스타일) */}
           <Button type="primary" icon={<PlusOutlined />} onClick={showRegisterModal}>
             계정 등록
           </Button>
         </Space>
       </div>
       
-      {/* 데이터 테이블 */}
       <Card bordered={false} bodyStyle={{ padding: 0 }}>
         <Table 
           columns={columns} 
           dataSource={data} 
           pagination={{ pageSize: 5 }} 
           loading={loading}
-          locale={{ emptyText: '등록된 계정이 없습니다. [계정 등록]을 눌러 추가하세요.' }}
+          locale={{ emptyText: '등록된 계정이 없습니다.' }}
         />
       </Card>
 
-      {/* ✅ 이메일 입력 모달 */}
       <Modal
         title="유튜브 계정 등록"
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
-        footer={null} // Form 내부 버튼 사용
+        footer={null} 
       >
         <p>연동할 유튜브 채널의 <b>Google 계정 이메일</b>을 입력해주세요.</p>
         <Form form={form} onFinish={handleRegisterStart} layout="vertical">

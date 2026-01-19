@@ -357,6 +357,9 @@ const YoutubeDashboard = ({ data = [] }) => {
             } else if (['업로드 실패', '에러 발생', '토큰 만료'].includes(status)) {
                 color = '#ff4d4f'; // ✅ 빨간색 (실패 계열)
                 fontWeight = 'bold';
+            } else if (status === '예약됨') {
+                color = '#c7ad1c'; // ✅ 노란색
+                fontWeight = 'bold';
             } 
 
             return (
