@@ -124,7 +124,7 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
                                                 <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#87d068', flexShrink: 0 }} />
                                                 <div style={{ flex: 1 }}>
                                                     <Text strong style={{ display: 'block', marginBottom: '4px' }}>
-                                                        추천 댓글 #{index + 1}
+                                                        업로드된 댓글 #{index + 1}
                                                     </Text>
                                                     {/* 백엔드 데이터 구조에 따라 comment가 객체일 수도 있고 문자열일 수도 있음 */}
                                                     <Text copyable style={{ color: '#555' }}>
