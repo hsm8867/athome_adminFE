@@ -8,7 +8,7 @@ const { Title, Text } = Typography;
 // API 주소 정의
 const API_BASE_URL = 'http://34.64.158.35:8000';
 
-// 헬퍼 함수
+// 헬퍼 함수 (DB에 썸네일이 없을 경우를 대비한 백업용)
 const getYoutubeThumbnail = (url) => {
   if (!url) return 'https://via.placeholder.com/320x180?text=No+URL';
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -21,7 +21,7 @@ const getYoutubeThumbnail = (url) => {
 
 const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
     // 댓글 목록 상태 관리
-    const [comments, setComments] = useState([]); // 👈 여기서 useState를 쓰기 때문에 위에서 import 필수
+    const [comments, setComments] = useState([]); 
     const [loading, setLoading] = useState(false);
 
     // 1. 현재 선택된 비디오 찾기
@@ -41,8 +41,10 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
         const fetchComments = async () => {
             setLoading(true);
             console.log(`📡 [API 요청 시작] Video ID: ${activeVideo.key}, Title: ${activeVideo.title}`);
-            console.log(`🔗 요청 URL: ${API_BASE_URL}/videos/${activeVideo.key}/comments`);
+            console.log(`🔗 요청 URL: ${API_BASE_URL}/youtube/videos/${activeVideo.key}/comments`);
+            
             try {
+                // ✅ 백엔드 라우터 경로에 맞춰 /youtube 추가 확인 필요
                 const res = await axios.get(`${API_BASE_URL}/youtube/videos/${activeVideo.key}/comments`);
                 console.log(`✅ [API 응답 성공] Video ID: ${activeVideo.key}`);
                 console.log("📦 받아온 댓글 데이터:", res.data);
@@ -99,8 +101,9 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
                         <Title level={3}>{activeVideo.title}</Title>
                         
                         <div style={{ marginBottom: '30px' }}>
+                            {/* ✅ 수정됨: DB의 thumbnail_url을 우선 사용하고, 없으면 기존 로직 사용 */}
                             <img 
-                                src={getYoutubeThumbnail(activeVideo.url)} 
+                                src={activeVideo.thumbnail_url || getYoutubeThumbnail(activeVideo.url)} 
                                 alt="Thumbnail" 
                                 style={{ 
                                     width: '100%', 
@@ -129,7 +132,10 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
                                                     <Text strong style={{ display: 'block', marginBottom: '4px' }}>
                                                         추천 댓글 #{index + 1}
                                                     </Text>
-                                                    <Text copyable style={{ color: '#555' }}>{comment}</Text>
+                                                    {/* 백엔드 데이터 구조에 따라 comment가 객체일 수도 있고 문자열일 수도 있음 */}
+                                                    <Text copyable style={{ color: '#555' }}>
+                                                        {typeof comment === 'object' ? comment.content : comment}
+                                                    </Text>
                                                 </div>
                                             </div>
                                         </Card>
