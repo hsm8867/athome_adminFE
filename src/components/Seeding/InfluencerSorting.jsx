@@ -3,7 +3,10 @@ import { Table, Tag, Input, Button, message, Image, Card, Space, Row, Col, Selec
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const { Option } = Select;
+
 
 const InfluencerSorting = () => {
   const [data, setData] = useState([]);
@@ -33,7 +36,7 @@ const InfluencerSorting = () => {
     setLoading(true);
     try {
       const hashtagsStr = hashtags.join(",");
-      const response = await axios.get('http://34.64.158.35:8000/youtube/search',{
+      const response = await axios.get(`${API_BASE_URL}/youtube/search`,{
         params: { hashtags: hashtagsStr, country, min_followers: minFollowers },
         timeout: 20000 
       });

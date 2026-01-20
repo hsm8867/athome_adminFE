@@ -8,7 +8,7 @@ import YoutubeDashboard from '../components/YoutubeViral/YoutubeDashboard';
 import CreatedComments from '../components/YoutubeViral/CreatedComments';
 import YoutubePrompt from '../components/YoutubeViral/YoutubePrompt';
 
-const API_BASE_URL = 'http://34.64.158.35:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const YoutubeViral = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -54,9 +54,9 @@ const YoutubeViral = () => {
           size="large"
         >
           <Radio.Button value="account" style={{ width: '140px', textAlign: 'center' }}>유튜브 계정</Radio.Button>
-          <Radio.Button value="dashboard" style={{ width: '140px', textAlign: 'center' }}>업로드 대시보드</Radio.Button>
-          <Radio.Button value="comments" style={{ width: '140px', textAlign: 'center' }}>생성된 댓글</Radio.Button>
-          <Radio.Button value="prompt" style={{ width: '140px', textAlign: 'center' }}>프롬프트</Radio.Button>
+          <Radio.Button value="dashboard" style={{ width: '140px', textAlign: 'center' }}>댓글 생성 & 등록</Radio.Button>
+          <Radio.Button value="comments" style={{ width: '140px', textAlign: 'center' }}>등록된 댓글 확인</Radio.Button>
+          <Radio.Button value="prompt" style={{ width: '150px', textAlign: 'center' }}>프롬프트(준비중)</Radio.Button>
         </Radio.Group>
       </div>
 

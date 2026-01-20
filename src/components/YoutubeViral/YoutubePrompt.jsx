@@ -1,53 +1,230 @@
-import React from 'react';
-import { Typography, Card, Input, Button, Form, message } from 'antd';
-import { SaveOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Card, Modal, Form, Input, message, Space, Typography, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, RobotOutlined } from '@ant-design/icons';
+import axios from 'axios';
 
-const { Title, Paragraph } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const YoutubePrompt = () => {
+  const [personas, setPersonas] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // 모달 상태
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState(null); 
   const [form] = Form.useForm();
 
-  const handleSave = (values) => {
-    console.log('저장된 프롬프트:', values);
-    message.success('프롬프트 설정이 저장되었습니다.');
+  // ✅ 라우터 주소에 맞춰 API 호출 경로 수정됨
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  // 1. 목록 조회 (GET /youtube/persona)
+  const fetchPersonas = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/youtube/persona`);
+      // antd key 설정
+      const formattedData = response.data.map(item => ({ key: item.id, ...item }));
+      setPersonas(formattedData);
+    } catch (error) {
+      console.error(error);
+      message.error('페르소나 목록을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <Title level={4}>댓글 생성 AI 프롬프트 설정</Title>
-      <Paragraph type="secondary">
-        AI가 유튜브 댓글을 생성할 때 사용할 규칙(페르소나, 톤앤매너)을 설정합니다.
-      </Paragraph>
+  useEffect(() => {
+    fetchPersonas();
+  }, []);
 
-      <Card bordered={false}>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          initialValues={{
-            system_prompt: "너는 유튜브 영상의 분위기를 분석하여 시청자가 쓴 것처럼 가장 자연스러운 한국어 댓글을 생성하는 AI야. 홍보성 글은 피하고, 찐팬이 쓴 것 같은 말투를 써. 반드시 이모지를 포함해서 5개의 댓글을 작성해."
-          }}
+  // 2. 저장 핸들러
+  const handleSave = async (values) => {
+    try {
+      if (editingId) {
+        // ✅ 수정 (PUT /youtube/persona/{id})
+        await axios.put(`${API_BASE_URL}/youtube/persona/${editingId}`, values);
+        message.success('페르소나가 수정되었습니다.');
+      } else {
+        // ✅ 생성 (POST /youtube/persona)
+        await axios.post(`${API_BASE_URL}/youtube/persona`, values);
+        message.success('새로운 페르소나가 생성되었습니다.');
+      }
+      setIsModalVisible(false);
+      form.resetFields();
+      fetchPersonas(); 
+    } catch (error) {
+      console.error(error);
+      message.error('저장에 실패했습니다.');
+    }
+  };
+
+  // 3. 삭제 핸들러
+  const handleDelete = async (id) => {
+    try {
+      // ✅ 삭제 (DELETE /youtube/persona/{id}) 
+      // 백엔드 @router.delete("/persona/{persona_id}") 로 맞춰주세요!
+      await axios.delete(`${API_BASE_URL}/youtube/persona/${id}`);
+      message.success('삭제되었습니다.');
+      fetchPersonas();
+    } catch (error) {
+      console.error(error);
+      message.error('삭제 실패');
+    }
+  };
+
+  // 모달 열기 (생성)
+  const showCreateModal = () => {
+    setEditingId(null);
+    form.resetFields();
+    setIsModalVisible(true);
+  };
+
+  // 모달 열기 (수정)
+  const showEditModal = (record) => {
+    setEditingId(record.id);
+    form.setFieldsValue({
+      name: record.name,
+      system_prompt: record.system_prompt,
+      user_prompt: record.user_prompt
+    });
+    setIsModalVisible(true);
+  };
+
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: 60,
+      align: 'center',
+    },
+    {
+      title: '페르소나 이름',
+      dataIndex: 'name',
+      key: 'name',
+      width: 150,
+      render: (text) => <Text strong>{text}</Text>
+    },
+    {
+      title: '시스템 프롬프트 (Role)',
+      dataIndex: 'system_prompt',
+      key: 'system_prompt',
+      width: 350,
+      render: (text) => (
+        <Paragraph 
+            ellipsis={{ rows: 2, expandable: true, symbol: '더 보기' }} 
+            style={{ marginBottom: 0, color: '#555' }}
         >
+            {text}
+        </Paragraph>
+      )
+    },
+    {
+      title: '유저 프롬프트 (Instruction)',
+      dataIndex: 'user_prompt',
+      key: 'user_prompt',
+      render: (text) => (
+        <Paragraph 
+            ellipsis={{ rows: 2, expandable: true, symbol: '더 보기' }} 
+            style={{ marginBottom: 0, color: '#555' }}
+        >
+            {text}
+        </Paragraph>
+      )
+    },
+    {
+      title: '관리',
+      key: 'action',
+      width: 120,
+      align: 'center',
+      render: (_, record) => (
+        <Space>
+          <Button 
+            icon={<EditOutlined />} 
+            size="small" 
+            onClick={() => showEditModal(record)} 
+          />
+          <Popconfirm 
+            title="정말 삭제하시겠습니까?" 
+            onConfirm={() => handleDelete(record.id)}
+            okText="삭제" cancelText="취소"
+          >
+            <Button icon={<DeleteOutlined />} size="small" danger />
+          </Popconfirm>
+        </Space>
+      )
+    }
+  ];
+
+  return (
+    <div style={{ marginTop: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <Title level={4} style={{ margin: 0 }}>
+            <RobotOutlined style={{ marginRight: 8 }} />
+            AI 페르소나 관리
+        </Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={showCreateModal}>
+          새 페르소나 추가
+        </Button>
+      </div>
+
+      <Card bordered={false} bodyStyle={{ padding: 0 }}>
+        <Table 
+          columns={columns} 
+          dataSource={personas} 
+          rowKey="id"
+          pagination={{ pageSize: 5 }} 
+          loading={loading}
+          locale={{ emptyText: "등록된 페르소나가 없습니다." }}
+        />
+      </Card>
+
+      <Modal
+        title={editingId ? "페르소나 수정" : "새 페르소나 추가"}
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onOk={form.submit}
+        okText="저장"
+        cancelText="취소"
+        width={700} 
+      >
+        <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item
-            label="시스템 프롬프트 (AI 페르소나 설정)"
+            label="페르소나 이름"
+            name="name"
+            rules={[{ required: true, message: '이름을 입력해주세요.' }]}
+          >
+            <Input placeholder="예: 20대 대학생, 냉철한 평론가..." />
+          </Form.Item>
+
+          <Form.Item
+            label="시스템 프롬프트 (System Prompt)"
             name="system_prompt"
-            rules={[{ required: true, message: '시스템 프롬프트를 입력해주세요.' }]}
+            rules={[{ required: true, message: 'AI 역할을 정의해주세요.' }]}
+            tooltip="AI에게 부여할 역할, 말투, 성격을 정의합니다."
           >
             <TextArea 
-              rows={6} 
-              placeholder="예: 너는 20대 대학생 같은 말투를 쓰는 AI야..." 
-              style={{ resize: 'none' }}
+                rows={6} 
+                placeholder="예: 너는 유튜브 영상의 분위기를 분석하는 AI야. 말투는 ~해요체를 사용하고..." 
+                showCount
             />
           </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
-              설정 저장
-            </Button>
+          <Form.Item
+            label="유저 프롬프트 (User Prompt)"
+            name="user_prompt"
+            rules={[{ required: true, message: '구체적인 지시사항을 입력해주세요.' }]}
+            tooltip="AI에게 실제로 시킬 작업 내용을 적습니다."
+          >
+            <TextArea 
+                rows={4} 
+                placeholder="예: 다음 영상 정보를 바탕으로 베스트 댓글 5개를 작성해줘." 
+                showCount
+            />
           </Form.Item>
         </Form>
-      </Card>
+      </Modal>
     </div>
   );
 };
