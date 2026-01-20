@@ -200,7 +200,7 @@ const YoutubeAccount = () => {
                 <Space>
                     <Button onClick={() => setIsModalVisible(false)}>취소</Button>
                     <Button type="primary" htmlType="submit">
-                        인증 팝업 열기
+                        인증
                     </Button>
                 </Space>
             </Form.Item>

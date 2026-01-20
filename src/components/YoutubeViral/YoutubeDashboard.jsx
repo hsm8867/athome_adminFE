@@ -449,7 +449,7 @@ const YoutubeDashboard = ({ data = [] }) => {
               onClick={handleOpenModal}
               style={{ backgroundColor: '#ff0000', borderColor: '#ff0000' }}
             >
-              등록 & 생성
+              영상 등록
             </Button>
           </Space.Compact>
         </Card>
