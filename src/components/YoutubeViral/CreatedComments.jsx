@@ -176,12 +176,18 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
                                                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                                                         <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#52c41a', flexShrink: 0 }} />
                                                         <div style={{ flex: 1 }}>
-                                                            <Text strong style={{ display: 'block', marginBottom: '4px' }}>
-                                                                업로드된 댓글 #{index + 1}
-                                                                <span style={{ fontSize: '12px', color: '#999', marginLeft: '8px', fontWeight: 'normal' }}>
-                                                                    {new Date(comment.created_at).toLocaleDateString()}
-                                                                </span>
-                                                            </Text>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <Text strong style={{ marginBottom: '4px' }}>
+                                                                    업로드된 댓글 #{index + 1}
+                                                                </Text>
+                                                                {/* ✅ 이메일 표시 추가 */}
+                                                                {comment.account_email && (
+                                                                    <Tag color="green">{comment.account_email}</Tag>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '6px' }}>
+                                                                {new Date(comment.created_at).toLocaleDateString()} 완료
+                                                            </div>
                                                             <Text copyable style={{ color: '#555' }}>
                                                                 {comment.content}
                                                             </Text>
@@ -203,7 +209,6 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
                                             {scheduledComments.map((comment, index) => (
                                                 <Card key={comment.id} size="small" style={{ borderRadius: '8px', borderLeft: '4px solid #fa8c16', background: '#fff7e6' }}>
                                                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                                        {/* 프로필 색깔 다르게 (주황색) */}
                                                         <Avatar icon={<ClockCircleOutlined />} style={{ backgroundColor: '#fa8c16', flexShrink: 0 }} />
                                                         
                                                         <div style={{ flex: 1 }}>
@@ -211,12 +216,20 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
                                                                 <Text strong>
                                                                     업로드 예정 댓글 #{index + 1}
                                                                 </Text>
-                                                                {/* 예정 시간 표시 */}
-                                                                <Tag color="orange">
-                                                                    {comment.scheduled_time 
-                                                                        ? new Date(comment.scheduled_time).toLocaleString() 
-                                                                        : '시간 미정'}
-                                                                </Tag>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    {/* ✅ 예정된 계정 이메일 표시 */}
+                                                                    {comment.account_email ? (
+                                                                        <Tag color="orange">{comment.account_email}</Tag>
+                                                                    ) : (
+                                                                        <Tag>계정 미정</Tag>
+                                                                    )}
+                                                                    
+                                                                    <Tag color="orange">
+                                                                        {comment.scheduled_time 
+                                                                            ? dayjs(comment.scheduled_time).format('YYYY-MM-DD HH:mm:ss')
+                                                                            : '시간 미정'}
+                                                                    </Tag>
+                                                                </div>
                                                             </div>
                                                             
                                                             <div style={{ marginBottom: '8px' }}>
@@ -225,7 +238,6 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
                                                                 </Text>
                                                             </div>
 
-                                                            {/* ✅ 예약 취소 버튼 */}
                                                             <div style={{ textAlign: 'right' }}>
                                                                 <Popconfirm
                                                                     title="예약 취소"
@@ -251,7 +263,6 @@ const CreatedComments = ({ data = [], selectedVideoKey, onSelectVideo }) => {
                                         </div>
                                     </div>
                                 )}
-
                                 {/* 둘 다 없을 때 */}
                                 {uploadedComments.length === 0 && scheduledComments.length === 0 && (
                                     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="표시할 댓글 내역이 없습니다." />
