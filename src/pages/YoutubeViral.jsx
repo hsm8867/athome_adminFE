@@ -54,8 +54,8 @@ const YoutubeViral = () => {
           size="large"
         >
           <Radio.Button value="account" style={{ width: '140px', textAlign: 'center' }}>유튜브 계정</Radio.Button>
-          <Radio.Button value="dashboard" style={{ width: '140px', textAlign: 'center' }}>댓글 생성 & 등록</Radio.Button>
-          <Radio.Button value="comments" style={{ width: '140px', textAlign: 'center' }}>등록된 댓글 확인</Radio.Button>
+          <Radio.Button value="dashboard" style={{ width: '160px', textAlign: 'center' }}>댓글 생성 & 등록</Radio.Button>
+          <Radio.Button value="comments" style={{ width: '160px', textAlign: 'center' }}>등록된 댓글 확인</Radio.Button>
           <Radio.Button value="prompt" style={{ width: '150px', textAlign: 'center' }}>프롬프트(준비중)</Radio.Button>
         </Radio.Group>
       </div>
