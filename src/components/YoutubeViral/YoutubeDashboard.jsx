@@ -252,7 +252,7 @@ const YoutubeDashboard = ({ data = [] }) => {
         return;
       }
 
-      await axios.post(`${API_BASE_URL}/youtube/${targetVideoId}/upload_comment`, {
+      await axios.post(`${API_BASE_URL}/youtube/comments/schedule`, {
           comments: payload
       });
 
